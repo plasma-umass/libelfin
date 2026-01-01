@@ -38,6 +38,7 @@ class line_table;
 // Internal type forward-declarations
 struct section;
 struct abbrev_entry;
+struct attribute_spec;
 struct cursor;
 
 // XXX Audit for binary-compatibility
@@ -85,6 +86,7 @@ enum class section_type
         frame,
         info,
         line,
+        line_str,
         loc,
         macinfo,
         pubnames,
@@ -567,7 +569,8 @@ public:
         /**
          * Construct a value with type `type::invalid`.
          */
-        value() : cu(nullptr), typ(type::invalid) { }
+        value() : cu(nullptr), form(DW_FORM::addr), typ(type::invalid),
+                  offset(0), has_implicit_const(false), implicit_const(0) { }
 
         value(const value &o) = default;
         value(value &&o) = default;
@@ -705,7 +708,7 @@ private:
         friend class die;
 
         value(const unit *cu,
-              DW_AT name, DW_FORM form, type typ, section_offset offset);
+              const attribute_spec &spec, section_offset offset);
 
         void resolve_indirect(DW_AT name);
 
@@ -713,6 +716,8 @@ private:
         DW_FORM form;
         type typ;
         section_offset offset;
+        bool has_implicit_const;
+        int64_t implicit_const;
 };
 
 std::string
@@ -1079,7 +1084,7 @@ public:
          */
         line_table(const std::shared_ptr<section> &sec, section_offset offset,
                    unsigned cu_addr_size, const std::string &cu_comp_dir,
-                   const std::string &cu_name);
+                   const std::string &cu_name, const dwarf *dw = nullptr);
 
         /**
          * Construct an invalid, empty line table.
@@ -1121,6 +1126,7 @@ public:
          * number table.
          */
         iterator end() const;
+
 
         /**
          * Return an iterator to the line table entry containing addr
@@ -1264,7 +1270,7 @@ public:
          * for all fields.  is_stmt has no default value, so the
          * caller must provide it.
          */
-        void reset(bool is_stmt);
+        void reset(bool is_stmt, unsigned default_file_index);
 
         /**
          * Return a descriptive string of the form

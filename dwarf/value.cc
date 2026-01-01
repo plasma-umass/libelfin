@@ -11,10 +11,15 @@ using namespace std;
 DWARFPP_BEGIN_NAMESPACE
 
 value::value(const unit *cu,
-             DW_AT name, DW_FORM form, type typ, section_offset offset)
-        : cu(cu), form(form), typ(typ), offset(offset) {
+             const attribute_spec &spec, section_offset offset)
+        : cu(cu),
+          form(spec.form),
+          typ(spec.type),
+          offset(offset),
+          has_implicit_const(spec.form == DW_FORM::implicit_const),
+          implicit_const(spec.implicit_const) {
         if (form == DW_FORM::indirect)
-                resolve_indirect(name);
+                resolve_indirect(spec.name);
 }
 
 section_offset
@@ -76,6 +81,8 @@ value::as_uconstant() const
                 return cur.fixed<uint64_t>();
         case DW_FORM::udata:
                 return cur.uleb128();
+        case DW_FORM::implicit_const:
+                return static_cast<uint64_t>(implicit_const);
         default:
                 throw value_type_mismatch("cannot read " + to_string(typ) + " as uconstant");
         }
@@ -96,6 +103,8 @@ value::as_sconstant() const
                 return cur.fixed<int64_t>();
         case DW_FORM::sdata:
                 return cur.sleb128();
+        case DW_FORM::implicit_const:
+                return implicit_const;
         default:
                 throw value_type_mismatch("cannot read " + to_string(typ) + " as sconstant");
         }
@@ -245,6 +254,11 @@ value::as_cstr(size_t *size_out) const
                 cursor scur(cu->get_dwarf().get_section(section_type::str), off);
                 return scur.cstr(size_out);
         }
+        case DW_FORM::line_strp: {
+                section_offset off = cur.offset();
+                cursor scur(cu->get_dwarf().get_section(section_type::line_str), off);
+                return scur.cstr(size_out);
+        }
         default:
                 throw value_type_mismatch("cannot read " + to_string(typ) + " as string");
         }
@@ -279,7 +293,10 @@ value::resolve_indirect(DW_AT name)
         do {
                 form = (DW_FORM)c.uleb128();
         } while (form == DW_FORM::indirect);
-        typ = attribute_spec(name, form).type;
+        attribute_spec spec(name, form);
+        typ = spec.type;
+        has_implicit_const = (form == DW_FORM::implicit_const);
+        implicit_const = spec.implicit_const;
         offset = c.get_section_offset();
 }
 

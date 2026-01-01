@@ -314,7 +314,7 @@ compilation_unit::get_line_table() const
                 
                 m->lt = line_table(sec, d[DW_AT::stmt_list].as_sec_offset(),
                                    m->subsec->addr_size, comp_dir,
-                                   at_name(d));
+                                   at_name(d), &m->file);
         }
 done:
         return m->lt;

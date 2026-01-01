@@ -20,6 +20,7 @@ static const struct
         {".debug_frame",    section_type::frame},
         {".debug_info",     section_type::info},
         {".debug_line",     section_type::line},
+        {".debug_line_str", section_type::line_str},
         {".debug_loc",      section_type::loc},
         {".debug_macinfo",  section_type::macinfo},
         {".debug_pubnames", section_type::pubnames},
