@@ -82,16 +82,19 @@ public:
 enum class section_type
 {
         abbrev,
+        addr,           // DWARF 5: .debug_addr
         aranges,
         frame,
         info,
         line,
         line_str,
         loc,
+        loclists,       // DWARF 5: .debug_loclists
         macinfo,
         pubnames,
         pubtypes,
         ranges,
+        rnglists,       // DWARF 5: .debug_rnglists
         str,
         str_offsets,
         types,

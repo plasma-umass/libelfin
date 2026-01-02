@@ -31,11 +31,62 @@ value::get_section_offset() const
 taddr
 value::as_address() const
 {
-        if (form != DW_FORM::addr)
-                throw value_type_mismatch("cannot read " + to_string(typ) + " as address");
-
         cursor cur(cu->data(), offset);
-        return cur.address();
+
+        switch (form) {
+        case DW_FORM::addr:
+                return cur.address();
+
+        case DW_FORM::addrx:
+        case DW_FORM::addrx1:
+        case DW_FORM::addrx2:
+        case DW_FORM::addrx3:
+        case DW_FORM::addrx4: {
+                // DWARF 5: Read address index, look up in .debug_addr
+                uint64_t index;
+                switch (form) {
+                case DW_FORM::addrx:
+                        index = cur.uleb128();
+                        break;
+                case DW_FORM::addrx1:
+                        index = cur.fixed<uint8_t>();
+                        break;
+                case DW_FORM::addrx2:
+                        index = cur.fixed<uint16_t>();
+                        break;
+                case DW_FORM::addrx3:
+                        index = cur.fixed<uint8_t>() | (cur.fixed<uint16_t>() << 8);
+                        break;
+                case DW_FORM::addrx4:
+                        index = cur.fixed<uint32_t>();
+                        break;
+                default:
+                        index = 0;
+                        break;
+                }
+
+                // Get addr_base from CU root DIE's DW_AT_addr_base
+                // For now, use a simplified approach: skip the 8-byte header
+                // DWARF 5 .debug_addr has a header (length + version + addr_size + segment_selector_size)
+                auto addr_sec = cu->get_dwarf().get_section(section_type::addr);
+                auto cusec = cu->data();
+                unsigned addr_size = cusec->addr_size;
+
+                // The .debug_addr header is:
+                // - 4/12 bytes: unit length (4 for 32-bit DWARF, 12 for 64-bit)
+                // - 2 bytes: version
+                // - 1 byte: address_size
+                // - 1 byte: segment_selector_size
+                // For 32-bit DWARF, total header is 8 bytes
+                section_offset header_size = 8;
+
+                cursor addr_cur(addr_sec, header_size + index * addr_size);
+                return addr_cur.address();
+        }
+
+        default:
+                throw value_type_mismatch("cannot read " + to_string(typ) + " as address");
+        }
 }
 
 const void *
