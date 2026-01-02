@@ -21,6 +21,7 @@ to_string(section_type v)
         case section_type::pubtypes: return "section_type::pubtypes";
         case section_type::ranges: return "section_type::ranges";
         case section_type::str: return "section_type::str";
+        case section_type::str_offsets: return "section_type::str_offsets";
         case section_type::types: return "section_type::types";
         }
         return "(section_type)" + std::to_string((int)v);

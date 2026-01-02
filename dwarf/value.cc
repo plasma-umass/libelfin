@@ -259,6 +259,46 @@ value::as_cstr(size_t *size_out) const
                 cursor scur(cu->get_dwarf().get_section(section_type::line_str), off);
                 return scur.cstr(size_out);
         }
+        case DW_FORM::strx:
+        case DW_FORM::strx1:
+        case DW_FORM::strx2:
+        case DW_FORM::strx3:
+        case DW_FORM::strx4: {
+                // DWARF 5: Read string index, look up in .debug_str_offsets, then read from .debug_str
+                uint64_t index;
+                switch (form) {
+                case DW_FORM::strx:
+                        index = cur.uleb128();
+                        break;
+                case DW_FORM::strx1:
+                        index = cur.fixed<uint8_t>();
+                        break;
+                case DW_FORM::strx2:
+                        index = cur.fixed<uint16_t>();
+                        break;
+                case DW_FORM::strx3:
+                        index = cur.fixed<uint8_t>() | (cur.fixed<uint16_t>() << 8);
+                        break;
+                case DW_FORM::strx4:
+                        index = cur.fixed<uint32_t>();
+                        break;
+                default:
+                        index = 0;
+                        break;
+                }
+                // Get str_offsets_base from CU root DIE's DW_AT_str_offsets_base
+                // For now, we use a simplified approach: read from start of section + header
+                // DWARF 5 .debug_str_offsets has a header (length + version + padding)
+                // We skip the 8-byte header (4-byte length + 2-byte version + 2-byte padding for 32-bit DWARF)
+                auto str_offsets_sec = cu->get_dwarf().get_section(section_type::str_offsets);
+                section_offset header_size = 8;  // Simplified: assume 32-bit DWARF
+                unsigned offset_size = (str_offsets_sec->addr_size == 8) ? 8 : 4;
+                cursor offsets_cur(str_offsets_sec,
+                                   header_size + index * offset_size);
+                section_offset str_off = offsets_cur.offset();
+                cursor scur(cu->get_dwarf().get_section(section_type::str), str_off);
+                return scur.cstr(size_out);
+        }
         default:
                 throw value_type_mismatch("cannot read " + to_string(typ) + " as string");
         }

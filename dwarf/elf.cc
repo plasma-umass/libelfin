@@ -26,8 +26,9 @@ static const struct
         {".debug_pubnames", section_type::pubnames},
         {".debug_pubtypes", section_type::pubtypes},
         {".debug_ranges",   section_type::ranges},
-        {".debug_str",      section_type::str},
-        {".debug_types",    section_type::types},
+        {".debug_str",         section_type::str},
+        {".debug_str_offsets", section_type::str_offsets},
+        {".debug_types",       section_type::types},
 };
 
 bool

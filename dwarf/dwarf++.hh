@@ -93,6 +93,7 @@ enum class section_type
         pubtypes,
         ranges,
         str,
+        str_offsets,
         types,
 };
 
