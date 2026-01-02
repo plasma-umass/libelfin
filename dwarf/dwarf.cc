@@ -42,46 +42,24 @@ dwarf::dwarf(const std::shared_ptr<loader> &l)
                 throw format_error("required .debug_info section missing");
         m->sec_info = make_shared<section>(section_type::info, data, size, byte_order::lsb);
 
-        // Sniff the format (DWARF32/64), endianness, and address size from the first CU header
+        // Sniff the endianness from the version field of the first
+        // CU. This is always a small but non-zero integer.
         cursor endcur(m->sec_info);
-        // Skip length and detect format
+        // Skip length.
         section_length length = endcur.fixed<uword>();
-        format detected_fmt = format::dwarf32;
-        if (length == 0xffffffff) {
-                detected_fmt = format::dwarf64;
+        if (length == 0xffffffff)
                 endcur.fixed<uint64_t>();
-        }
         // Get version in both little and big endian.
         uhalf version = endcur.fixed<uhalf>();
         uhalf versionbe = (version >> 8) | ((version & 0xFF) << 8);
-        byte_order detected_ord = byte_order::lsb;
         if (versionbe < version) {
-                detected_ord = byte_order::msb;
+                m->sec_info = make_shared<section>(section_type::info, data, size, byte_order::msb);
         }
-
-        // For DWARF 5, header is: version(2) + unit_type(1) + address_size(1) + ...
-        // For DWARF 2-4, header is: version(2) + abbrev_offset(4/8) + address_size(1)
-        unsigned detected_addr_size = 8;  // Default to 8 for 64-bit systems
-        if (version >= 5) {
-                // Skip unit_type (1 byte)
-                endcur.fixed<ubyte>();
-                detected_addr_size = endcur.fixed<ubyte>();
-        } else {
-                // Skip abbrev_offset (4 or 8 bytes depending on format)
-                if (detected_fmt == format::dwarf64)
-                        endcur.fixed<uint64_t>();
-                else
-                        endcur.fixed<uword>();
-                detected_addr_size = endcur.fixed<ubyte>();
-        }
-
-        // Recreate sec_info with the detected format, byte order, and address size
-        m->sec_info = make_shared<section>(section_type::info, data, size, detected_ord, detected_fmt, detected_addr_size);
 
         data = l->load(section_type::abbrev, &size);
         if (!data)
                 throw format_error("required .debug_abbrev section missing");
-        m->sec_abbrev = make_shared<section>(section_type::abbrev, data, size, m->sec_info->ord, m->sec_info->fmt);
+        m->sec_abbrev = make_shared<section>(section_type::abbrev, data, size, m->sec_info->ord);
 
         // Get compilation units.  Everything derives from these, so
         // there's no point in doing it lazily.
@@ -144,11 +122,7 @@ dwarf::get_section(section_type type) const
         if (!data)
                 throw format_error(std::string(elf::section_type_to_name(type))
                                    + " section missing");
-        // Use the correct section type, format, and inherit address size from sec_info
-        m->sections[type] = std::make_shared<section>(type, data, size,
-                                                       m->sec_info->ord,
-                                                       m->sec_info->fmt,
-                                                       m->sec_info->addr_size);
+        m->sections[type] = std::make_shared<section>(section_type::str, data, size, m->sec_info->ord);
         return m->sections[type];
 }
 

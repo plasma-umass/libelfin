@@ -10,19 +10,16 @@ to_string(section_type v)
 {
         switch (v) {
         case section_type::abbrev: return "section_type::abbrev";
-        case section_type::addr: return "section_type::addr";
         case section_type::aranges: return "section_type::aranges";
         case section_type::frame: return "section_type::frame";
         case section_type::info: return "section_type::info";
         case section_type::line: return "section_type::line";
         case section_type::line_str: return "section_type::line_str";
         case section_type::loc: return "section_type::loc";
-        case section_type::loclists: return "section_type::loclists";
         case section_type::macinfo: return "section_type::macinfo";
         case section_type::pubnames: return "section_type::pubnames";
         case section_type::pubtypes: return "section_type::pubtypes";
         case section_type::ranges: return "section_type::ranges";
-        case section_type::rnglists: return "section_type::rnglists";
         case section_type::str: return "section_type::str";
         case section_type::str_offsets: return "section_type::str_offsets";
         case section_type::types: return "section_type::types";
