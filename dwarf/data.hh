@@ -595,6 +595,22 @@ enum class DW_LNCT
 std::string
 to_string(DW_LNCT v);
 
+// Range list entry encodings (DWARF5 section 7.25)
+enum class DW_RLE : ubyte
+{
+        end_of_list    = 0x00,
+        base_addressx  = 0x01,
+        startx_endx    = 0x02,
+        startx_length  = 0x03,
+        offset_pair    = 0x04,
+        base_address   = 0x05,
+        start_end      = 0x06,
+        start_length   = 0x07,
+};
+
+std::string
+to_string(DW_RLE v);
+
 DWARFPP_END_NAMESPACE
 
 #endif

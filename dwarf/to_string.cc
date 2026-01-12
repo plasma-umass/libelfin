@@ -10,6 +10,7 @@ to_string(section_type v)
 {
         switch (v) {
         case section_type::abbrev: return "section_type::abbrev";
+        case section_type::addr: return "section_type::addr";
         case section_type::aranges: return "section_type::aranges";
         case section_type::frame: return "section_type::frame";
         case section_type::info: return "section_type::info";
@@ -572,6 +573,22 @@ to_string(DW_LNCT v)
         case DW_LNCT::hi_user: break;
         }
         return "(DW_LNCT)0x" + to_hex((int)v);
+}
+
+std::string
+to_string(DW_RLE v)
+{
+        switch (v) {
+        case DW_RLE::end_of_list: return "DW_RLE_end_of_list";
+        case DW_RLE::base_addressx: return "DW_RLE_base_addressx";
+        case DW_RLE::startx_endx: return "DW_RLE_startx_endx";
+        case DW_RLE::startx_length: return "DW_RLE_startx_length";
+        case DW_RLE::offset_pair: return "DW_RLE_offset_pair";
+        case DW_RLE::base_address: return "DW_RLE_base_address";
+        case DW_RLE::start_end: return "DW_RLE_start_end";
+        case DW_RLE::start_length: return "DW_RLE_start_length";
+        }
+        return "(DW_RLE)0x" + to_hex((int)v);
 }
 
 DWARFPP_END_NAMESPACE
