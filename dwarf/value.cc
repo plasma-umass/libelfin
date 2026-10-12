@@ -325,7 +325,9 @@ value::as_string(string &buf) const
         size_t size;
         const char *p = as_cstr(&size);
         buf.resize(size);
-        memmove(&buf.front(), p, size);
+        if (size > 0) {
+                memmove(&buf.front(), p, size);
+        }
 }
 
 string
